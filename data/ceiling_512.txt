@@ -1,0 +1,27 @@
+﻿ctx=512  active experts/pass=36.7 MiB  GPU fixed bytes/token=2026 MiB (LM head 469, attn+ctrl 1461, KV 96)
+all-CPU expert bytes/token = 1762 MiB
+
+experts-on-GPU | VRAM for experts | DDR MiB/tok | tok/s @41GB/s | tok/s @48GB/s
+ 0 looped       |       0 MiB      |    1762     |   20.0        |   23.0
+ 1 looped       |     587 MiB      |    1652     |   21.0        |   24.2
+ 1 outer        |     587 MiB      |    1725     |   20.3        |   23.4
+ 2 looped       |    1174 MiB      |    1542     |   22.2        |   25.5
+ 2 outer        |    1174 MiB      |    1688     |   20.7        |   23.8
+ 3 looped       |    1762 MiB      |    1431     |   23.5        |   26.9
+ 3 outer        |    1762 MiB      |    1652     |   21.0        |   24.2
+ 4 looped       |    2349 MiB      |    1321     |   25.0        |   28.6
+ 4 outer        |    2349 MiB      |    1615     |   21.4        |   24.6
+ 5 looped       |    2936 MiB      |    1211     |   26.8        |   30.4
+ 5 outer        |    2936 MiB      |    1578     |   21.8        |   25.0
+ 6 looped       |    3524 MiB      |    1101     |   28.7        |   32.5
+ 6 outer        |    3524 MiB      |    1542     |   22.2        |   25.5
+ 7 looped       |    4111 MiB      |     991     |   31.0        |   35.0
+ 8 looped       |    4698 MiB      |     881     |   33.6        |   37.8
+
+Prefill FLOPs/token (weights only) = 9.82 GFLOP
+  all-GPU compute ceiling @50% of 52 TFLOPS = 2,647 tok/s
+  op-offload PCIe bound, ub= 128:    122 tok/s  (expert stream 13.8 GiB / 14.1 GB/s per ubatch)
+  op-offload PCIe bound, ub= 256:    244 tok/s  (expert stream 13.8 GiB / 14.1 GB/s per ubatch)
+  op-offload PCIe bound, ub= 512:    488 tok/s  (expert stream 13.8 GiB / 14.1 GB/s per ubatch)
+  op-offload PCIe bound, ub=1024:    977 tok/s  (expert stream 13.8 GiB / 14.1 GB/s per ubatch)
+  op-offload PCIe bound, ub=2048:   1954 tok/s  (expert stream 13.8 GiB / 14.1 GB/s per ubatch)

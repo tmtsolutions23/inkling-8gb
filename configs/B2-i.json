@@ -1,0 +1,36 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "-c",
+                 "32768",
+                 "-fa",
+                 "on",
+                 "-t",
+                 "8",
+                 "-ub",
+                 "64",
+                 "--no-op-offload",
+                 "-ot",
+                 "blk\\.(11|12|10|13|9|14)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU",
+                 "-ctk",
+                 "q8_0",
+                 "-ctv",
+                 "q8_0",
+                 "-b",
+                 "64",
+                 "-tb",
+                 "16"
+             ],
+    "name":  "B2-i",
+    "expect_gpu_model_mib":  4708.9,
+    "note":  "derived from best-config.json: +-tb 16",
+    "gpu_expert_layers":  [
+                              11,
+                              12,
+                              10,
+                              13,
+                              9,
+                              14
+                          ]
+}

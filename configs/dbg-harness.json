@@ -1,0 +1,19 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "--n-cpu-moe",
+                 "24",
+                 "-c",
+                 "32768",
+                 "-fa",
+                 "on",
+                 "-t",
+                 "8",
+                 "-ub",
+                 "128",
+                 "--no-op-offload"
+             ],
+    "name":  "dbg-harness",
+    "note":  "harness debug"
+}

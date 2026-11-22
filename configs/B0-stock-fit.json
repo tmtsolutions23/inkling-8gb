@@ -1,0 +1,8 @@
+{
+    "args":  [
+                 "-c",
+                 "32768"
+             ],
+    "name":  "B0-stock-fit",
+    "note":  "stock llama-server: only ctx set; --fit auto picks placement; op-offload on, ub512, fa auto, threads auto"
+}

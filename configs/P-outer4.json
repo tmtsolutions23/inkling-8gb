@@ -1,0 +1,26 @@
+{
+ "args": [
+  "-ngl",
+  "99",
+  "-c",
+  "32768",
+  "-fa",
+  "on",
+  "-t",
+  "8",
+  "-ub",
+  "128",
+  "--no-op-offload",
+  "-ot",
+  "blk\\.(0|1|2|3)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU"
+ ],
+ "name": "P-outer4",
+ "expect_gpu_model_mib": 3534.4,
+ "note": "derived from best-config.json: experts on GPU: [0, 1, 2, 3]",
+ "gpu_expert_layers": [
+  0,
+  1,
+  2,
+  3
+ ]
+}

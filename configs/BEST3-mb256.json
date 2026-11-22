@@ -1,0 +1,40 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "-c",
+                 "32768",
+                 "-fa",
+                 "on",
+                 "-t",
+                 "8",
+                 "-ub",
+                 "512",
+                 "-ot",
+                 "blk\\.(11|12|10|13|9|14)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU",
+                 "-ctk",
+                 "q8_0",
+                 "-ctv",
+                 "q8_0",
+                 "-b",
+                 "512",
+                 "-tb",
+                 "16"
+             ],
+    "name":  "BEST3-mb256",
+    "expect_gpu_model_mib":  4708.9,
+    "note":  "derived from best-config.json: ---no-op-offload; -ub 512; -b 512; bin-opt4 (shared input views) (sched patch + chunked attn), op-offload ON, LLAMA_ATTN_Q_CHUNK=32",
+    "gpu_expert_layers":  [
+                              11,
+                              12,
+                              10,
+                              13,
+                              9,
+                              14
+                          ],
+    "bin":  "bin-inkling",
+    "env":  {
+                "GGML_OP_OFFLOAD_MIN_BATCH":  "256",
+                "LLAMA_ATTN_Q_CHUNK":  "32"
+            }
+}

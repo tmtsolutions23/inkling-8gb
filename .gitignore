@@ -1,0 +1,9 @@
+# local artifacts (download / build these yourself, see README)
+/models/
+/llama.cpp/
+/toolchain/
+/.venv/
+/.secrets/
+/logs/
+/results/
+__pycache__/

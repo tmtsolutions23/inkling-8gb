@@ -1,0 +1,27 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "-c",
+                 "32768",
+                 "-fa",
+                 "on",
+                 "-t",
+                 "8",
+                 "-ub",
+                 "128",
+                 "--no-op-offload",
+                 "-ot",
+                 "blk\\.(11|12|10|13|9)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU"
+             ],
+    "name":  "L5-f",
+    "expect_gpu_model_mib":  4121.6,
+    "note":  "derived from best-config.json: experts on GPU: [11, 12, 10, 13, 9]",
+    "gpu_expert_layers":  [
+                              11,
+                              12,
+                              10,
+                              13,
+                              9
+                          ]
+}

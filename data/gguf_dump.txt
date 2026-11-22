@@ -1,0 +1,291 @@
+﻿=== metadata (non-tokenizer) ===
+GGUF.version = 3
+GGUF.tensor_count = 704
+GGUF.kv_count = 62
+general.architecture = inkling2_loop
+general.type = model
+general.sampling.temp = 1.0
+general.name = Inkling-2-Mini
+general.size_label = 128x1.8B
+general.license = apache-2.0
+general.license.link = https://www.apache.org/licenses/LICENSE-2.0
+general.tags = ['conversational', 'image-text-to-text', 'moe', 'image-text-to-text']
+inkling2_loop.block_count = 24
+inkling2_loop.context_length = 1048576
+inkling2_loop.embedding_length = 2304
+inkling2_loop.feed_forward_length = 1152
+inkling2_loop.attention.head_count = [24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24]
+inkling2_loop.attention.head_count_kv = [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+inkling2_loop.attention.layer_norm_rms_epsilon = 9.999999974752427e-07
+inkling2_loop.expert_count = 128
+inkling2_loop.expert_used_count = 8
+inkling2_loop.attention.key_length = 128
+inkling2_loop.attention.value_length = 128
+inkling2_loop.loop.count = 3
+inkling2_loop.loop.start = 6
+inkling2_loop.loop.end = 18
+inkling2_loop.loop.gate_rank = 64
+inkling2_loop.vocab_size = 201024
+inkling2_loop.vocab_size_unpadded = 200058
+inkling2_loop.expert_feed_forward_length = 1152
+inkling2_loop.attention.key_length_swa = 128
+inkling2_loop.attention.value_length_swa = 128
+inkling2_loop.rope.dimension_count = 0
+inkling2_loop.attention.sliding_window = 1024
+inkling2_loop.attention.sliding_window_pattern = [True, True, True, True, True, False, True, True, True, True, True, False, True, True, True, True, True, False, True, True, True, True, True, False]
+inkling2_loop.shortconv.l_cache = 4
+inkling2_loop.expert_weights_scale = 8.0
+inkling2_loop.activation.situ_beta = 4.0
+inkling2_loop.activation.situ_linear_beta = 25.0
+inkling2_loop.attn_res.block_size = 6
+inkling2_loop.final_logit_softcapping = 30.0
+inkling2_loop.attention.relative_length = 16
+inkling2_loop.attention.relative_extent = 1024
+inkling2_loop.attention.qk_clip = 22.627416610717773
+inkling2_loop.attention.relative_clip = 8.0
+inkling2_loop.attention.log_scale_floor = 8192
+inkling2_loop.attention.log_scale_alpha = 0.10000000149011612
+tokenizer.ggml.model = gpt2
+tokenizer.ggml.pre = inkling2
+tokenizer.chat_template = {%- set effort_map = {"none": 0.0, "minimal": 0.1, "low": 0.2, "medium": 0.7, "high": 0.9, "xhigh": 0.99, "max": 0.99} -%}
+{%- set role_token = {"user": "<|message_user|>", "assistant": "<|message_model|>", "system": "<|message_system|>", "tool": "<|message_tool|>"} -%}
+
+{%- macro emit_thinking_effort() -%}
+    {%- set eff = reasoning_effort if reasoning_effort is defined and reasoning_effort is not none else 0.9 -%}
+    {%- if eff is string -%}
+        {%- set key = eff | trim -%}
+        {%- if key not in effort_map -%}
+            {{- raise_exception("Unknown reasoning_effort: " ~ eff) -}}
+        {%- endif -%}
+        {%- set num = effort_map[key] -%}
+    {%- else -%}
+        {%- set num = eff | float -%}
+    {%- endif -%}
+    {%- if num < 0.0 or num > 0.99 -%}
+        {{- raise_exception("reasoning_effort must be in [0.0, 0.99]") -}}
+    {%- endif -%}
+    {{- "<|message_system|><|content_text|>Thinking effort level: " -}}
+    {%- if num == 0.0 -%}0{%- else -%}{{ num }}{%- endif -%}
+    {{- "<|end_message|>" -}}
+{%- endmacro -%}
+
+{%- if tools -%}
+    {%- set tool_state = namespace(specs=[]) -%}
+    {%- for tool in tools -%}
+        {%- set fn = tool.function if tool.function is defined else tool -%}
+        {%- set spec = {
+            "description": (fn.description if fn.description is defined and fn.description else ""),
+            "name": fn.name,
+            "parameters": (fn.parameters if fn.parameters is defined and fn.parameters else {}),
+            "type": (tool.type if tool.type is defined and tool.type else "function"),
+        } -%}
+        {%- set tool_state.specs = tool_state.specs + [spec] -%}
+    {%- endfor -%}
+    {{- "<|message_system|>tool_declare<|content_xml|>" -}}
+    {{- tool_state.specs | tojson(sort_keys=true, separators=(",", ":")) -}}
+    {{- "<|end_message|>" -}}
+{%- endif -%}
+
+{%- set state = namespace(effort_emitted=false) -%}
+{%- for message in messages -%}
+    {%- if message.role not in role_token -%}
+        {{- raise_exception("Unknown message role: " ~ message.role) -}}
+    {%- endif -%}
+    {%- if not state.effort_emitted and message.role != "system" -%}
+        {{- emit_thinking_effort() -}}
+        {%- set state.effort_emitted = true -%}
+    {%- endif -%}
+
+    {%- set header = namespace(text=role_token[message.role]) -%}
+    {%- if message.role == "tool" -%}
+        {%- if message.name is defined and message.name -%}
+            {%- set header.text = header.text ~ message.name -%}
+        {%- elif message.tool_call_id is defined and message.tool_call_id -%}
+            {%- for prev in messages -%}
+                {%- if prev.role == "assistant" and prev.tool_calls -%}
+                    {%- for tc in prev.tool_calls -%}
+                        {%- if tc.id is defined and tc.id == message.tool_call_id and tc.function.name is defined -%}
+                            {%- set header.text = header.text ~ tc.function.name -%}
+                        {%- endif -%}
+                    {%- endfor -%}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif -%}
+    {%- elif message.role == "assistant" and message.name is defined and message.name -%}
+        {%- set header.text = header.text ~ message.name -%}
+    {%- endif -%}
+    {%- set rtok = header.text -%}
+    {%- set rendered -%}
+
+    {%- if message.role == "assistant" and message.reasoning_content is defined and message.reasoning_content -%}
+        {{- rtok ~ "<|content_thinking|>" ~ message.reasoning_content ~ "<|end_message|>" -}}
+    {%- endif -%}
+
+    {%- if message.content is string and (message.content or not (message.role == "assistant" and (message.tool_calls or message.reasoning_content))) -%}
+        {{- rtok ~ "<|content_text|>" ~ message.content ~ "<|end_message|>" -}}
+    {%- elif message.content -%}
+        {%- for part in message.content -%}
+            {%- if part is string -%}
+                {{- rtok ~ "<|content_text|>" ~ part ~ "<|end_message|>" -}}
+            {%- elif part.type is not defined or part.type in ("text", "input_text") -%}
+                {%- set text_part = (part.text if part.text is defined and part.text is string else "") -%}
+                {{- rtok ~ "<|content_text|>" ~ text_part ~ "<|end_message|>" -}}
+            {%- elif part.type in ("image", "input_image", "image_url") -%}
+                {%- if message.role not in ("user", "tool") -%}
+                    {{- raise_exception("Image content is only supported for user and tool messages") -}}
+                {%- endif -%}
+                {{- rtok ~ "<|content_image|><|unused_200054|><|end_message|>" -}}
+            {%- elif part.type in ("audio", "input_audio", "audio_url") -%}
+                {{- raise_exception("Inkling 2 does not accept audio input") -}}
+            {%- else -%}
+                {{- raise_exception("Unsupported content part type: " ~ part.type) -}}
+            {%- endif -%}
+        {%- endfor -%}
+    {%- endif -%}
+
+    {%- if message.role == "assistant" and message.tool_calls -%}
+        {%- for tc in message.tool_calls -%}
+            {%- set fn = tc.function -%}
+            {%- if fn.name is not defined or fn.name is not string -%}
+                {{- raise_exception("tool call function name must be a string") -}}
+            {%- endif -%}
+            {%- if message.name is defined and message.name and message.name != fn.name -%}
+                {{- raise_exception("assistant name " ~ message.name ~ " does not match its tool call " ~ fn.name) -}}
+            {%- endif -%}
+            {%- set args = fn.arguments if fn.arguments is defined and fn.arguments else {} -%}
+            {%- if args is string -%}
+                {{- raise_exception("tool call arguments must be a parsed object, not a JSON string; canonicalize upstream") -}}
+            {%- endif -%}
+            {%- if args is not mapping -%}
+                {{- raise_exception("tool call arguments must be an object") -}}
+            {%- endif -%}
+            {{- "<|message_model|>" ~ fn.name ~ "<|content_invoke_tool_json|>" -}}
+            {{- '{"name":' ~ (fn.name | tojson(sort_keys=true, separators=(",", ":"))) ~ ',"args":' -}}
+            {{- "{" -}}
+            {%- for key, value in args | dictsort(case_sensitive=true) -%}
+                {{- (key | tojson) ~ ":" ~ (value | tojson(separators=(",", ":"))) -}}
+                {%- if not loop.last -%},{%- endif -%}
+            {%- endfor -%}
+            {{- "}}<|end_message|>" -}}
+        {%- endfor -%}
+    {%- endif -%}
+
+    {%- if message.role == "assistant" -%}
+        {{- "<|content_model_end_sampling|>" -}}
+    {%- endif -%}
+    {%- endset -%}
+    {%- if message.role == "assistant" -%}
+        {%- generation -%}{{- rendered -}}{%- endgeneration -%}
+    {%- else -%}
+        {{- rendered -}}
+    {%- endif -%}
+{%- endfor -%}
+
+{%- if not state.effort_emitted -%}
+    {{- emit_thinking_effort() -}}
+{%- endif -%}
+
+general.quantization_version = 2
+general.file_type = 15
+quantize.imatrix.file = imatrix.gguf
+quantize.imatrix.dataset = calib_train.txt
+quantize.imatrix.entries_count = 392
+quantize.imatrix.chunks_count = 27873
+inkling2_loop.loop.varying = False
+
+=== tensors (first layer + non-block) ===
+blk.6.loop_msg_query.weight                      F32        [2304, 4]                         0.04 MiB
+output.weight                                    Q8_0       [2304, 201024]                  469.31 MiB
+output_norm.weight                               F32        [2304]                            0.01 MiB
+output_res_query.weight                          F32        [2304]                            0.01 MiB
+token_embd.weight                                Q8_0       [2304, 201024]                  469.31 MiB
+token_embd_norm.weight                           F32        [2304]                            0.01 MiB
+blk.0.attn_gate.weight                           Q8_0       [2304, 3072]                      7.17 MiB
+blk.0.attn_k.weight                              Q8_0       [2304, 1024]                      2.39 MiB
+blk.0.attn_k_conv.weight                         F32        [4, 1024]                         0.02 MiB
+blk.0.attn_norm.weight                           F32        [2304]                            0.01 MiB
+blk.0.attn_output.weight                         Q8_0       [3072, 2304]                      7.17 MiB
+blk.0.attn_post_conv.weight                      F32        [4, 2304]                         0.04 MiB
+blk.0.attn_q.weight                              Q8_0       [2304, 3072]                      7.17 MiB
+blk.0.attn_q_clip.weight                         F32        [128, 24]                         0.01 MiB
+blk.0.attn_rel.weight                            Q8_0       [2304, 384]                       0.90 MiB
+blk.0.attn_rel_bias.weight                       F32        [16, 1024]                        0.06 MiB
+blk.0.attn_rel_clip.weight                       F32        [16, 24]                          0.00 MiB
+blk.0.attn_sink_proj.weight                      Q8_0       [2304, 24]                        0.06 MiB
+blk.0.attn_v.weight                              Q8_0       [2304, 1024]                      2.39 MiB
+blk.0.attn_v_conv.weight                         F32        [4, 1024]                         0.02 MiB
+blk.0.exp_probs_b.bias                           F32        [128]                             0.00 MiB
+blk.0.ffn_down_exps.weight                       Q5_0       [1152, 2304, 128]               222.75 MiB
+blk.0.ffn_gate_inp.weight                        F32        [2304, 128]                       1.12 MiB
+blk.0.ffn_gate_up_exps.weight                    Q4_K       [2304, 2304, 128]               364.50 MiB
+blk.0.ffn_norm.weight                            F32        [2304]                            0.01 MiB
+blk.0.ffn_post_conv.weight                       F32        [4, 2304]                         0.04 MiB
+blk.0.ffn_res_query.weight                       F32        [2304]                            0.01 MiB
+blk.6.attn_gate.weight                           Q8_0       [2304, 3072]                      7.17 MiB
+blk.6.attn_k.weight                              Q8_0       [2304, 1024]                      2.39 MiB
+blk.6.attn_k_conv.weight                         F32        [4, 1024]                         0.02 MiB
+blk.6.attn_norm.weight                           F32        [2304]                            0.01 MiB
+blk.6.attn_output.weight                         Q8_0       [3072, 2304]                      7.17 MiB
+blk.6.attn_post_conv.weight                      F32        [4, 2304]                         0.04 MiB
+blk.6.attn_q.weight                              Q8_0       [2304, 3072]                      7.17 MiB
+blk.6.attn_q_clip.weight                         F32        [128, 24]                         0.01 MiB
+blk.6.attn_rel.weight                            Q8_0       [2304, 384]                       0.90 MiB
+blk.6.attn_rel_bias.weight                       F32        [16, 1024]                        0.06 MiB
+blk.6.attn_rel_clip.weight                       F32        [16, 24]                          0.00 MiB
+blk.6.attn_res_query.weight                      F32        [2304]                            0.01 MiB
+blk.6.attn_sink_proj.weight                      Q8_0       [2304, 24]                        0.06 MiB
+blk.6.attn_v.weight                              Q8_0       [2304, 1024]                      2.39 MiB
+blk.6.attn_v_conv.weight                         F32        [4, 1024]                         0.02 MiB
+blk.6.exp_probs_b.bias                           F32        [128]                             0.00 MiB
+blk.6.ffn_down_exps.weight                       Q5_0       [1152, 2304, 128]               222.75 MiB
+blk.6.ffn_gate_inp.weight                        F32        [2304, 128]                       1.12 MiB
+blk.6.ffn_gate_up_exps.weight                    Q4_K       [2304, 2304, 128]               364.50 MiB
+blk.6.ffn_norm.weight                            F32        [2304]                            0.01 MiB
+blk.6.ffn_post_conv.weight                       F32        [4, 2304]                         0.04 MiB
+blk.6.ffn_res_query.weight                       F32        [2304]                            0.01 MiB
+blk.6.loop_q_ctrl_down.weight                    Q8_0       [4608, 64]                        0.30 MiB
+blk.6.loop_q_ctrl_forget.weight                  Q8_0       [64, 2304]                        0.15 MiB
+blk.6.loop_q_ctrl_gain.weight                    Q8_0       [64, 2304]                        0.15 MiB
+blk.6.loop_k_ctrl_down.weight                    Q8_0       [4608, 64]                        0.30 MiB
+blk.6.loop_k_ctrl_forget.weight                  Q8_0       [64, 2304]                        0.15 MiB
+blk.6.loop_k_ctrl_gain.weight                    Q8_0       [64, 2304]                        0.15 MiB
+blk.6.loop_ffn_ctrl_down.weight                  Q8_0       [4608, 64]                        0.30 MiB
+blk.6.loop_ffn_ctrl_forget.weight                Q8_0       [64, 2304]                        0.15 MiB
+blk.6.loop_ffn_ctrl_gain.weight                  Q8_0       [64, 2304]                        0.15 MiB
+blk.6.loop_v_ctrl_down.weight                    Q8_0       [4608, 64]                        0.30 MiB
+blk.6.loop_v_ctrl_forget.weight                  Q8_0       [64, 2304]                        0.15 MiB
+blk.6.loop_v_ctrl_gain.weight                    Q8_0       [64, 2304]                        0.15 MiB
+
+=== per layer (MiB) ===
+layer  -1  experts       0.0  other    938.6
+layer   0  experts     587.2  other     28.6
+layer   1  experts     587.2  other     28.6
+layer   2  experts     587.2  other     28.6
+layer   3  experts     587.2  other     28.6
+layer   4  experts     587.2  other     28.6
+layer   5  experts     587.2  other     28.8
+layer   6  experts     587.2  other     31.0
+layer   7  experts     587.2  other     31.0
+layer   8  experts     587.2  other     31.0
+layer   9  experts     587.2  other     31.0
+layer  10  experts     587.2  other     31.0
+layer  11  experts     587.2  other     31.2
+layer  12  experts     587.2  other     31.0
+layer  13  experts     587.2  other     31.0
+layer  14  experts     587.2  other     31.0
+layer  15  experts     587.2  other     31.0
+layer  16  experts     587.2  other     31.0
+layer  17  experts     587.2  other     31.2
+layer  18  experts     587.2  other     28.6
+layer  19  experts     587.2  other     28.6
+layer  20  experts     587.2  other     28.6
+layer  21  experts     587.2  other     28.6
+layer  22  experts     587.2  other     28.6
+layer  23  experts     587.2  other     28.8
+TOTAL experts 13.764 GiB  other 1.616 GiB  all 15.379 GiB
+
+=== bytes by ggml type (GiB) ===
+Q4_K            8.543
+Q5_0            5.221
+Q8_0            1.584
+F32             0.032

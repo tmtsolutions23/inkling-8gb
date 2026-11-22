@@ -1,0 +1,26 @@
+{
+ "args": [
+  "-ngl",
+  "99",
+  "-c",
+  "32768",
+  "-fa",
+  "on",
+  "-t",
+  "8",
+  "-ub",
+  "128",
+  "--no-op-offload",
+  "-ot",
+  "blk\\.(11|12|10|13)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU"
+ ],
+ "name": "P-loop4",
+ "expect_gpu_model_mib": 3534.4,
+ "note": "derived from best-config.json: experts on GPU: [11, 12, 10, 13]",
+ "gpu_expert_layers": [
+  11,
+  12,
+  10,
+  13
+ ]
+}

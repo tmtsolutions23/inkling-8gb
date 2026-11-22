@@ -1,0 +1,12 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "--n-cpu-moe",
+                 "24",
+                 "-c",
+                 "32768"
+             ],
+    "name":  "B1-stock-ncmoe24",
+    "note":  "plan\u0027s naive stock: all experts CPU, defaults (op-offload on, ub512, fa auto, t auto) - oversubscribed"
+}

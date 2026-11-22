@@ -1,0 +1,20 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "--n-cpu-moe",
+                 "24",
+                 "-c",
+                 "32768",
+                 "-fa",
+                 "on",
+                 "-t",
+                 "8",
+                 "-ub",
+                 "128",
+                 "--no-op-offload"
+             ],
+    "name":  "C0-b",
+    "expect_gpu_model_mib":  1185.4,
+    "note":  "control C0: first non-spilling config, all experts CPU"
+}

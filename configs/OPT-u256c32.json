@@ -1,0 +1,39 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "-c",
+                 "32768",
+                 "-fa",
+                 "on",
+                 "-t",
+                 "8",
+                 "-ub",
+                 "256",
+                 "-ot",
+                 "blk\\.(11|12|10|13|9|14)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU",
+                 "-ctk",
+                 "q8_0",
+                 "-ctv",
+                 "q8_0",
+                 "-b",
+                 "256",
+                 "-tb",
+                 "16"
+             ],
+    "name":  "OPT-u256c32",
+    "expect_gpu_model_mib":  4708.9,
+    "note":  "derived from best-config.json: ---no-op-offload; -ub 256; -b 256; bin-opt2 (sched patch + chunked attn), op-offload ON, LLAMA_ATTN_Q_CHUNK=32",
+    "gpu_expert_layers":  [
+                              11,
+                              12,
+                              10,
+                              13,
+                              9,
+                              14
+                          ],
+    "bin":  "bin-opt2",
+    "env":  {
+                "LLAMA_ATTN_Q_CHUNK":  "32"
+            }
+}

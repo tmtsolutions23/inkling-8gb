@@ -1,0 +1,37 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "-c",
+                 "32768",
+                 "-fa",
+                 "on",
+                 "-t",
+                 "8",
+                 "-ub",
+                 "64",
+                 "--no-op-offload",
+                 "-ctk",
+                 "q8_0",
+                 "-ctv",
+                 "q8_0",
+                 "-b",
+                 "64",
+                 "-tb",
+                 "16",
+                 "-ot",
+                 "blk\\.(11|12|10|13)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU",
+                 "--moe-cache-mib",
+                 "1174",
+                 "--moe-cache-cpu-share",
+                 "1.0"
+             ],
+    "name":  "MC-L4-1174",
+    "note":  "derived from best-config.json: experts on GPU: [11, 12, 10, 13]; +--moe-cache-mib 1174; +--moe-cache-cpu-share 1.0",
+    "gpu_expert_layers":  [
+                              11,
+                              12,
+                              10,
+                              13
+                          ]
+}

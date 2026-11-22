@@ -1,0 +1,36 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "-c",
+                 "32768",
+                 "-fa",
+                 "on",
+                 "-t",
+                 "8",
+                 "-ub",
+                 "256",
+                 "--no-op-offload",
+                 "-ot",
+                 "blk\\.(11|12|10|13|9|14)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU",
+                 "-ctk",
+                 "q8_0",
+                 "-ctv",
+                 "q8_0",
+                 "-b",
+                 "256",
+                 "-tb",
+                 "16"
+             ],
+    "name":  "X3-pre-ub256",
+    "expect_gpu_model_mib":  4708.9,
+    "note":  "BEST2 prebuilt with ub256/b256 (no op-offload)",
+    "gpu_expert_layers":  [
+                              11,
+                              12,
+                              10,
+                              13,
+                              9,
+                              14
+                          ]
+}

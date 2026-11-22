@@ -1,0 +1,29 @@
+{
+ "args": [
+  "-ngl",
+  "99",
+  "-c",
+  "32768",
+  "-fa",
+  "on",
+  "-t",
+  "8",
+  "-ub",
+  "64",
+  "--no-op-offload",
+  "-ot",
+  "blk\\.(11|12|10|13|9)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU",
+  "-b",
+  "64"
+ ],
+ "name": "UB64",
+ "expect_gpu_model_mib": 4121.6,
+ "note": "derived from best-config.json: -ub 64; +-b 64",
+ "gpu_expert_layers": [
+  11,
+  12,
+  10,
+  13,
+  9
+ ]
+}

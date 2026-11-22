@@ -1,0 +1,29 @@
+{
+    "args":  [
+                 "-ngl",
+                 "99",
+                 "-c",
+                 "32768",
+                 "-fa",
+                 "on",
+                 "-t",
+                 "8",
+                 "-ub",
+                 "128",
+                 "--no-op-offload",
+                 "-ot",
+                 "blk\\.(11|12|10|13|9)\\.ffn_.*_exps\\.weight=CUDA0,blk\\.\\d+\\.ffn_.*_exps\\.weight=CPU",
+                 "-tb",
+                 "16"
+             ],
+    "name":  "G-L5f16",
+    "expect_gpu_model_mib":  4121.6,
+    "note":  "needle gate comparator: loop5 f16 KV ub128 + tb16",
+    "gpu_expert_layers":  [
+                              11,
+                              12,
+                              10,
+                              13,
+                              9
+                          ]
+}
